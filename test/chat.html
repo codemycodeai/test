@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Ghosty AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0D1117;
+            color: #C9D1D9;
+            background-image: radial-gradient(circle at 10% 10%, rgba(28, 117, 232, 0.1) 0%, rgba(13, 17, 23, 0) 25%),
+                radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.1) 0%, rgba(13, 17, 23, 0) 25%);
+        }
+
+        /* --- LOADER AND PAGE TRANSITION STYLES --- */
+        #loader-wrapper {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background-color: #0D1117;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        #loader-ghost {
+            transition: transform 0.6s cubic-bezier(0.5, 0, 0.75, 0);
+        }
+
+        #page-content {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        @keyframes windResistance {
+
+            0%,
+            100% {
+                transform: translateY(-2px) rotate(8deg) skewX(-10deg);
+            }
+
+            50% {
+                transform: translateY(2px) rotate(8deg) skewX(-10deg);
+            }
+        }
+
+        @keyframes fastWindBlow {
+            0% {
+                transform: translateX(300px);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(-300px);
+                opacity: 0;
+            }
+        }
+
+        .ghosty-logo-loading .ghost-icon {
+            animation: windResistance 0.3s ease-in-out infinite;
+        }
+
+        .wind-lines {
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            top: 0;
+            left: -50%;
+            pointer-events: none;
+        }
+
+        .wind-line {
+            position: absolute;
+            background-color: rgba(201, 209, 217, 0.4);
+            height: 3px;
+            border-radius: 2px;
+            animation: fastWindBlow 0.6s linear infinite;
+        }
+
+        .wind-line:nth-child(1) {
+            top: 30%;
+            width: 60px;
+            animation-delay: 0s;
+        }
+
+        .wind-line:nth-child(2) {
+            top: 50%;
+            width: 90px;
+            animation-delay: -0.3s;
+        }
+
+        .wind-line:nth-child(3) {
+            top: 70%;
+            width: 70px;
+            animation-delay: -0.5s;
+        }
+
+        /* --- Regular Page Styles --- */
+        .glass-nav {
+            background: rgba(22, 27, 34, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(48, 54, 61, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .widget-card {
+            background: rgba(22, 27, 34, 0.5);
+            border: 1px solid rgba(48, 54, 61, 0.7);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .widget-card:hover {
+            border-color: #43a0f8;
+            box-shadow: 0 10px 30px rgba(28, 117, 232, 0.1);
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            90%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            95% {
+                transform: scaleY(0.1);
+            }
+        }
+
+        .ghost-body {
+            clip-path: polygon(0% 0%, 100% 0%, 100% 95%, 80% 100%, 70% 95%, 60% 100%, 50% 95%, 40% 100%, 30% 95%, 20% 100%, 0% 95%);
+        }
+
+        .ghosty-logo-animated .ghost-icon {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .ghosty-logo-animated .eye {
+            animation: blink 3.5s ease-in-out infinite;
+        }
+
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar-link {
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .sidebar-link.active,
+        .sidebar-link:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #fff;
+        }
+
+        .sidebar-link.active {
+            box-shadow: inset 3px 0 0 #43a0f8;
+        }
+
+        .sidebar-link svg {
+            color: #8b949e;
+            transition: color 0.2s ease;
+        }
+
+        .sidebar-link:hover svg,
+        .sidebar-link.active svg {
+            color: #43a0f8;
+        }
+
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #30363d;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #484f58;
+        }
+
+        /* Tab styles */
+        .tab-btn.active {
+            background-color: #1c75e8;
+            color: #fff;
+        }
+
+        .tab-btn {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+    <!-- ==== LOADER ==== -->
+    <div id="loader-wrapper">
+        <div id="loader-ghost" class="ghosty-logo-loading relative" style="width: 128px; height: 128px;">
+            <div class="wind-lines">
+                <div class="wind-line"></div>
+                <div class="wind-line"></div>
+                <div class="wind-line"></div>
+            </div>
+            <div class="ghost-icon w-32 h-32 relative">
+                <div class="ghost-body w-full h-full rounded-t-full rounded-b-2xl relative overflow-hidden"
+                    style="background: linear-gradient(135deg, #43a0f8 0%, #1c75e8 100%);">
+                    <div class="ghost-eyes absolute top-12 left-1/2 -translate-x-1/2 flex gap-5">
+                        <div class="eye w-5 h-2 bg-white rounded-full" style="transform: translateY(4px);"></div>
+                        <div class="eye w-5 h-2 bg-white rounded-full" style="transform: translateY(4px);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==== MAIN PAGE CONTENT ==== -->
+    <div id="page-content" class="flex h-screen">
+        <!-- Sidebar and Mobile Header -->
+        <div class="lg:hidden fixed top-0 left-0 right-0 z-40 p-4">
+            <header class="container mx-auto glass-nav rounded-2xl px-4 py-2 flex justify-between items-center">
+                <div class="ghosty-logo flex items-center gap-2">
+                    <div class="ghost-icon w-8 h-8 relative">
+                        <div class="ghost-body w-full h-full rounded-t-full rounded-b-xl relative overflow-hidden"
+                            style="background: linear-gradient(135deg, #43a0f8 0%, #1c75e8 100%);">
+                            <div class="ghost-eyes absolute top-3 left-1/2 -translate-x-1/2 flex gap-1">
+                                <div class="eye w-1.5 h-1.5 bg-white rounded-full"></div>
+                                <div class="eye w-1.5 h-1.5 bg-white rounded-full"></div>
+                            </div>
+                        </div>
+                    </div><span class="text-xl font-bold text-white">Ghosty AI</span>
+                </div><button id="menu-toggle" class="p-2 text-gray-300 hover:text-white"><svg
+                        xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg></button>
+            </header>
+        </div>
+        <aside id="sidebar" class="sidebar fixed lg:relative inset-y-0 left-0 z-50 w-64 glass-nav flex flex-col">
+            <div class="ghosty-logo ghosty-logo-animated flex items-center gap-3 p-6 border-b border-gray-700/50">
+                <div class="ghost-icon w-10 h-10 relative">
+                    <div class="ghost-body w-full h-full rounded-t-full rounded-b-xl relative overflow-hidden"
+                        style="background: linear-gradient(135deg, #43a0f8 0%, #1c75e8 100%);">
+                        <div class="ghost-eyes absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                            <div class="eye w-2 h-2 bg-white rounded-full"></div>
+                            <div class="eye w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                </div><span class="text-2xl font-bold text-white">Ghosty AI</span>
+            </div>
+            <nav class="flex-grow p-4 space-y-2">
+                <p class="px-4 pt-2 pb-1 text-xs font-semibold text-gray-500 uppercase">Frequent</p><a
+                    href="dashboard.html" class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg"><svg
+                        xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                            d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg><span>Dashboard</span></a><a href="api.html"
+                    class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg"><svg
+                        xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0L7.86 8.3c-.35 1.43.9 2.72 2.36 2.36l5.13-.64c1.56-.2 1.56-2.4 0-2.6L11.49 3.17z"
+                            clip-rule="evenodd" />
+                        <path fill-rule="evenodd"
+                            d="M12.74 10.74a2.5 2.5 0 01-3.48 3.48l-3.48 3.48a2.5 2.5 0 01-3.54-3.54l3.48-3.48a2.5 2.5 0 013.48-3.48l3.54 3.54z"
+                            clip-rule="evenodd" />
+                    </svg><span>API Fallbacks</span></a><a href="chat.html"
+                    class="sidebar-link active flex items-center gap-3 px-4 py-2.5 rounded-lg"><svg
+                        xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z"
+                            clip-rule="evenodd" />
+                    </svg><span>Chat</span></a>
+                <p class="px-4 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase">More</p><a href="gallery.html"
+                    class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg"><svg
+                        xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                            clip-rule="evenodd" />
+                    </svg><span>Gallery</span></a><a href="#"
+                    class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg"><svg
+                        xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4a1 1 0 000 2h12a1 1 0 100-2H4zM4 9a1 1 0 000 2h12a1 1 0 100-2H4zm0 5a1 1 0 100 2h12a1 1 0 100-2H4z"
+                            clip-rule="evenodd" />
+                    </svg><span>Keyboard Config</span></a><a href="#"
+                    class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg"><svg
+                        xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                            clip-rule="evenodd" />
+                    </svg><span>Demo</span></a>
+            </nav>
+            <div class="p-4 border-t border-gray-700/50 relative"><button id="user-menu-button"
+                    class="w-full flex items-center gap-3 text-left hover:bg-gray-700/50 p-2 rounded-lg transition"><img
+                        class="w-10 h-10 rounded-full" src="https://placehold.co/100x100/E2E8F0/4A5568?text=J"
+                        alt="User avatar">
+                    <div class="flex-1">
+                        <p class="font-semibold text-white">John Doe</p>
+                        <p class="text-xs text-gray-400">Premium Plan</p>
+                    </div><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <div id="user-menu"
+                    class="absolute hidden bottom-full mb-2 left-4 right-4 glass-nav rounded-lg shadow-xl overflow-hidden">
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50">Profile</a><a
+                        href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50">Settings</a><a
+                        href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50">Manage
+                        Subscription</a>
+                    <div class="border-t border-gray-700/50"></div><a href="#"
+                        class="block px-4 py-2 text-sm text-red-400 hover:bg-red-500/20">Logout</a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 bg-[#0D1117] p-6 lg:p-10 overflow-y-auto pt-24 lg:pt-10 flex flex-col">
+            <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">Ghosty Chat</h1>
+            <p class="text-gray-400 mb-6">Send bulk messages or review your chat history.</p>
+            <div class="bg-gray-900/50 border border-gray-700 rounded-lg p-1.5 inline-flex self-start mb-6">
+                <button id="chat-tab-btn" class="tab-btn active font-semibold py-2 px-6 rounded-md">Send
+                    Message</button>
+                <button id="history-tab-btn"
+                    class="tab-btn font-semibold text-gray-400 hover:text-white py-2 px-6 rounded-md">History</button>
+            </div>
+
+            <!-- CHAT VIEW -->
+            <div id="chat-view" class="flex-grow flex flex-col lg:flex-row gap-8">
+                <div class="widget-card rounded-2xl p-6 flex-grow flex flex-col">
+                    <h2 class="text-xl font-bold text-white mb-4">Send New Message</h2>
+                    <textarea id="markdown-input"
+                        class="w-full flex-grow bg-gray-900 border border-gray-700 text-gray-300 rounded-lg p-4 focus:ring-blue-500 focus:border-blue-500 custom-scrollbar"
+                        placeholder="Paste your message text here..."></textarea>
+                    <button
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-lg transition self-end mt-4">Send
+                        Message</button>
+                </div>
+                <div class="widget-card rounded-2xl p-6">
+                    <h2 class="text-xl font-bold text-white mb-4">Recent Received Messages</h2>
+                    <div id="recent-messages-list" class="space-y-3 max-h-fitcontent overflow-y-auto custom-scrollbar">
+                        <p class="text-gray-500">Loading recent messages...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HISTORY VIEW -->
+            <div id="history-view" class="hidden">
+                <div class="widget-card rounded-2xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">Sent Message History</h2>
+                        <button id="clear-history-btn"
+                            class="bg-red-600/50 hover:bg-red-600/80 text-red-300 hover:text-white text-sm font-semibold py-2 px-3 rounded-lg transition">Clear
+                            All History</button>
+                    </div>
+                    <div id="chat-history-list" class="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                        <p class="text-gray-500">Loading chat history...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <script>
+        // --- PAGE TRANSITION & LOADER LOGIC ---
+        const loaderWrapper = document.getElementById('loader-wrapper');
+        const loaderGhost = document.getElementById('loader-ghost');
+        const pageContent = document.getElementById('page-content');
+        function pageEnterAnimation() { if (!loaderWrapper || !loaderGhost || !pageContent) return; loaderGhost.classList.remove('ghosty-logo-loading'); loaderGhost.style.transform = 'rotate(8deg) skewX(-10deg) scale(50)'; setTimeout(() => { loaderWrapper.style.opacity = '0'; pageContent.style.opacity = '1'; setTimeout(() => { loaderWrapper.style.display = 'none'; }, 500); }, 600); }
+        function handleLinkClick(event) { const link = event.target.closest('a.sidebar-link'); if (!link || link.href === window.location.href) return; event.preventDefault(); const destinationUrl = link.href; if (loaderWrapper && pageContent && window.getComputedStyle(loaderWrapper).display === 'none') { loaderWrapper.style.display = 'flex'; loaderGhost.style.transform = 'none'; loaderGhost.classList.add('ghosty-logo-loading'); setTimeout(() => { loaderWrapper.style.opacity = '1'; pageContent.style.opacity = '0'; }, 10); setTimeout(() => { window.location.href = destinationUrl; }, 500); } }
+        window.onload = pageEnterAnimation;
+
+        // --- CHAT PAGE LOGIC ---
+
+        // In-memory state variables to hold data after fetching
+        let recentMessagesData = [];
+        let chatHistoryData = [];
+
+        // Main function to fetch all data for the chat page
+        async function initializeChatPage() {
+            const apiUrl = 'db.json';
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error(`Network response was not ok`);
+                const data = await response.json();
+
+                // Populate state variables with fetched data
+                recentMessagesData = data.chatData.recentMessages;
+                chatHistoryData = data.chatData.chatHistory;
+
+                // Render content using the new data
+                renderRecentMessages();
+                renderChatHistory();
+
+            } catch (error) {
+                console.error("Failed to fetch chat data:", error);
+                document.getElementById('recent-messages-list').innerHTML = `<p class="text-red-400">Could not load messages.</p>`;
+                document.getElementById('chat-history-list').innerHTML = `<p class="text-red-400">Could not load history.</p>`;
+            }
+        }
+
+        // Renders the list of recent messages
+        function renderRecentMessages() {
+            const list = document.getElementById('recent-messages-list');
+            if (!list) return;
+
+            if (recentMessagesData.length === 0) {
+                list.innerHTML = `<p class="text-gray-500">No recent messages.</p>`;
+                return;
+            }
+
+            list.innerHTML = recentMessagesData.map(msg => `
+            
+                <div class="bg-gray-900/60 p-3 rounded-lg">
+                    <div class="" style="font-size:12px;color: #43a0f8;">message-${msg.id}</div>
+                    <p class="text-gray-300 text-sm truncate">${msg.message}</p>
+                </div>
+            `).join('');
+        }
+
+        // Renders the simplified chat history list
+        function renderChatHistory() {
+            const list = document.getElementById('chat-history-list');
+            if (!list) return;
+
+            if (chatHistoryData.length === 0) {
+                list.innerHTML = `<p class="text-center text-gray-500 py-4">Your sent message history is empty.</p>`;
+                return;
+            }
+
+            list.innerHTML = chatHistoryData.map(chat => `
+                <div class="" style="font-size:12px;color: #43a0f8">  Chat-${chat.id}</div>
+                <div class="bg-gray-900/30 p-3 rounded-lg flex justify-between items-center gap-4">
+                    <p class="text-gray-300 text-sm whitespace-pre-wrap flex-grow">${chat.message}</p>
+                    <button class="delete-history-item-btn p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-md transition flex-shrink-0" data-id="${chat.id}" title="Delete Message">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            `).join('');
+
+            // Re-attach listeners to the new delete buttons
+            addDeleteButtonListeners();
+        }
+
+        function addDeleteButtonListeners() {
+            document.querySelectorAll('.delete-history-item-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idToDelete = e.currentTarget.dataset.id;
+                    // Filter the state array to remove the item
+                    chatHistoryData = chatHistoryData.filter(item => item.id != idToDelete);
+                    // Re-render the list with the updated state
+                    renderChatHistory();
+                });
+            });
+        }
+
+        function setupEventListeners() {
+            // Page transitions
+            document.getElementById('sidebar')?.addEventListener('click', handleLinkClick);
+
+            // General UI Listeners
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userMenu = document.getElementById('user-menu');
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            userMenuButton?.addEventListener('click', () => userMenu.classList.toggle('hidden'));
+            menuToggle?.addEventListener('click', () => sidebar.classList.toggle('open'));
+            document.addEventListener('click', function (event) {
+                if (userMenuButton && !userMenuButton.contains(event.target) && userMenu && !userMenu.contains(event.target)) userMenu.classList.add('hidden');
+                if (sidebar && sidebar.classList.contains('open') && !sidebar.contains(event.target) && !menuToggle.contains(event.target)) sidebar.classList.remove('open');
+            });
+
+            // Tab switching logic
+            const chatTabBtn = document.getElementById('chat-tab-btn');
+            const historyTabBtn = document.getElementById('history-tab-btn');
+            const chatView = document.getElementById('chat-view');
+            const historyView = document.getElementById('history-view');
+
+            chatTabBtn.addEventListener('click', () => {
+                chatView.classList.remove('hidden');
+                historyView.classList.add('hidden');
+                chatTabBtn.classList.add('active', 'text-white');
+                chatTabBtn.classList.remove('text-gray-400');
+                historyTabBtn.classList.remove('active', 'text-white');
+                historyTabBtn.classList.add('text-gray-400');
+            });
+
+            historyTabBtn.addEventListener('click', () => {
+                historyView.classList.remove('hidden');
+                chatView.classList.add('hidden');
+                historyTabBtn.classList.add('active', 'text-white');
+                historyTabBtn.classList.remove('text-gray-400');
+                chatTabBtn.classList.remove('active', 'text-white');
+                chatTabBtn.classList.add('text-gray-400');
+            });
+
+            // Clear history button
+            const clearHistoryBtn = document.getElementById('clear-history-btn');
+            clearHistoryBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete all sent messages? This cannot be undone.')) {
+                    chatHistoryData = []; // Clear the state
+                    renderChatHistory(); // Re-render to show it's empty
+                }
+            });
+        }
+
+        // Kick off the data fetching when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeChatPage();
+            setupEventListeners();
+        });
+    </script>
+</body>
+
+</html>
